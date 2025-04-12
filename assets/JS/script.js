@@ -1,6 +1,3 @@
-// Wait for the DOM to finish loading before running the game
-// Get the button elements and add event listeners to them
-
 document.addEventListener("DOMContentLoaded", function() {
     let buttons = document.getElementsByTagName("button");
 
@@ -21,43 +18,66 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    // Start on addition by default
     runGame("addition");
-
 });
 
 /**
  * The main game "loop", called when the script is first loaded
- * and after the user's answer has been processed
+ * and after the user's answer has been processed.
  */
 function runGame(gameType) {
 
-    document.getElementById("answer-box").value = "";
-    document.getElementById("answer-box").focus();
+    // Clear the answer box and focus
+    let answerBox = document.getElementById("answer-box");
+    answerBox.value = "";
+    answerBox.focus();
 
-    // Creates two random numbers between 1 and 25
-    let num1 = Math.floor(Math.random() * 25) + 1;
-    let num2 = Math.floor(Math.random() * 25) + 1;
+    let operand1, operand2;
 
-    if (gameType === "addition") {
-        displayAdditionQuestion(num1, num2);
-    } else if (gameType === "multiply") {
-        displayMultiplyQuestion(num1, num2);
-    } else if (gameType === "subtract" ) {
-        displaySubtractQuestion(num1, num2);
+    // Generate operand1 and operand2 based on the gameType
+    if (gameType === "division") {
+        /**
+         * For division, we must ensure it's always a whole number (no remainder).
+         * One approach: pick a random divisor (operand2), then pick a random
+         * quotient, and multiply them to get operand1.
+         */
+        operand2 = Math.floor(Math.random() * 12) + 1;  // 1..12
+        let quotient = Math.floor(Math.random() * 12) + 1; // 1..12
+        operand1 = operand2 * quotient; // Ensures operand1 ÷ operand2 is an integer
+        
+        // The higher number goes first; in this logic, operand1 is guaranteed >= operand2.
+        displayDivisionQuestion(operand1, operand2);
+
     } else {
-        alert(`Unknown game type: ${gameType}`);
-        throw `Unknown game type: ${gameType}. Aborting!`;
-    }
+        // For addition, subtraction, multiplication: pick random 1..25
+        operand1 = Math.floor(Math.random() * 25) + 1;
+        operand2 = Math.floor(Math.random() * 25) + 1;
 
+        // Ensure the higher number appears first for all operations
+        if (operand1 < operand2) {
+            [operand1, operand2] = [operand2, operand1];
+        }
+
+        if (gameType === "addition") {
+            displayAdditionQuestion(operand1, operand2);
+        } else if (gameType === "subtract") {
+            displaySubtractQuestion(operand1, operand2);
+        } else if (gameType === "multiply") {
+            displayMultiplyQuestion(operand1, operand2);
+        } else {
+            alert(`Unknown game type: ${gameType}`);
+            throw `Unknown game type: ${gameType}. Aborting!`;
+        }
+    }
 }
 
 /**
  * Checks the answer against the first element in
- * the returned calculateCorrectAnswer array
+ * the returned calculateCorrectAnswer array.
  */
 function checkAnswer() {
-
-    let userAnswer = parseInt(document.getElementById("answer-box").value);
+    let userAnswer = parseFloat(document.getElementById("answer-box").value);
     let calculatedAnswer = calculateCorrectAnswer();
     let isCorrect = userAnswer === calculatedAnswer[0];
 
@@ -65,77 +85,76 @@ function checkAnswer() {
         alert("Hey! You got it right! :D");
         incrementScore();
     } else {
-        alert(`Awwww.... you answered ${userAnswer}. The correct answer was ${calculatedAnswer[0]}!`);
+        alert(`Awwww... You answered ${userAnswer}. The correct answer was ${calculatedAnswer[0]}!`);
         incrementWrongAnswer();
     }
 
     runGame(calculatedAnswer[1]);
-
 }
 
 /**
- * Gets the operands (the numbers) and the operator (plus, minus etc)
- * directly from the dom, and returns the correct answer.
+ * Gets the operands (the numbers) and the operator (plus, minus, etc)
+ * directly from the DOM and returns the correct answer along with the game type.
  */
 function calculateCorrectAnswer() {
-
-    let operand1 = parseInt(document.getElementById('operand1').innerText);
-    let operand2 = parseInt(document.getElementById('operand2').innerText);
+    let operand1 = parseFloat(document.getElementById("operand1").innerText);
+    let operand2 = parseFloat(document.getElementById("operand2").innerText);
     let operator = document.getElementById("operator").innerText;
 
     if (operator === "+") {
         return [operand1 + operand2, "addition"];
-    } else if (operator === "x") {
-        return [operand1 * operand2, "multiply"];
     } else if (operator === "-") {
         return [operand1 - operand2, "subtract"];
+    } else if (operator === "x") {
+        return [operand1 * operand2, "multiply"];
+    } else if (operator === "÷") {
+        // We already ensured it's a whole number in runGame, so no decimal remainder expected
+        return [operand1 / operand2, "division"];
     } else {
-        alert(`Unimplemented operator ${operator}`);
-        throw `Unimplemented operator ${operator}. Aborting!`;
+        alert(`Unimplemented operator: ${operator}`);
+        throw `Unimplemented operator: ${operator}. Aborting!`;
     }
-
 }
 
-/**
- * Gets the current score from the DOM and increments it by 1
+/** 
+ * Get the current score from the DOM and increment by 1.
  */
 function incrementScore() {
-
     let oldScore = parseInt(document.getElementById("score").innerText);
     document.getElementById("score").innerText = ++oldScore;
-
 }
 
-/**
- * Gets the current tally of incorrect answers from the DOM and increments it by 1
+/** 
+ * Get the current tally of incorrect answers from the DOM and increment by 1.
  */
 function incrementWrongAnswer() {
-
     let oldScore = parseInt(document.getElementById("incorrect").innerText);
     document.getElementById("incorrect").innerText = ++oldScore;
-    
 }
 
+// ----- Functions to display each question type -----
 function displayAdditionQuestion(operand1, operand2) {
-
-    document.getElementById('operand1').textContent = operand1;
-    document.getElementById('operand2').textContent = operand2;
-    document.getElementById('operator').textContent = "+";
-    
+    document.getElementById("operand1").textContent = operand1;
+    document.getElementById("operator").textContent = "+";
+    document.getElementById("operand2").textContent = operand2;
 }
 
 function displaySubtractQuestion(operand1, operand2) {
-
-    document.getElementById("operand1").textContent = operand1 > operand2 ? operand1 : operand2;
-    document.getElementById("operand2").textContent = operand1 > operand2 ? operand2 : operand1;
-    document.getElementById('operator').textContent = "-";
-
+    // After swapping, operand1 is always >= operand2, so result won't be negative
+    document.getElementById("operand1").textContent = operand1;
+    document.getElementById("operator").textContent = "-";
+    document.getElementById("operand2").textContent = operand2;
 }
 
 function displayMultiplyQuestion(operand1, operand2) {
+    document.getElementById("operand1").textContent = operand1;
+    document.getElementById("operator").textContent = "x";
+    document.getElementById("operand2").textContent = operand2;
+}
 
-    document.getElementById('operand1').textContent = operand1;
-    document.getElementById('operand2').textContent = operand2;
-    document.getElementById('operator').textContent = "x";
-
+function displayDivisionQuestion(operand1, operand2) {
+    // operand1 >= operand2 by design, so it always shows the bigger number first
+    document.getElementById("operand1").textContent = operand1;
+    document.getElementById("operator").textContent = "÷";
+    document.getElementById("operand2").textContent = operand2;
 }
